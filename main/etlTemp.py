@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 
 os.chdir('/Users/sousekilyu/Documents/GitHub/GaoKaoVer3')
 
+# %%
 year = 2020
 filepath = f"data/{year}年山东省普通一批投档线.xlsx"
 dt = pd.read_excel(filepath, dtype=str)
