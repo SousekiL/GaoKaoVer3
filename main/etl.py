@@ -6,11 +6,11 @@ import os
 import re
 import matplotlib.pyplot as plt
 
-# %%
+
 #' ## elt
 # %%
 # Set working directory
-os.chdir('/Users/sousekilyu/Documents/GitHub/GaoKaoVer2')
+os.chdir('/Users/sousekilyu/Documents/GitHub/GaoKaoVer3')
 
 # Define major lists
 majorList = [
@@ -43,26 +43,27 @@ majorData_rough = pd.DataFrame(majorList2, columns=["noun", "major"])
 
 # Function to read and process data
 def read_and_process_data(year):
-    filepath = f"data/{year}年山东省普通一批投档线.xlsx"
-    dt = pd.read_excel(filepath)
+    dt = pd.read_excel(f"data/{year}年山东省普通一批投档线.xlsx", dtype=str).dropna(axis=1, how='all')
     dt.columns = ["专业", "院校", "计划数", "位次"]
     dt = dt[~dt['专业'].str.contains("定向|预科")]
-    dt['院校'] = dt['院校'].str.replace(r"\（.*?\\）", "").str.replace(r"\(.*?\\)", "")
-    dt['专业'] = dt['专业'].str.replace(r"\（.*?\\）", "").str.replace(r"\(.*?\\)", "")
-    dt['位次'] = dt['位次'].str.replace("前50名", "50").astype(float)
-    dt_school = dt[~dt['位次'].isin([np.inf, np.nan])].groupby('院校')['位次'].median().reset_index()
-    dt_school.columns = ['院校', 'rank_by_school']
+    dt[['院校', '专业']] = dt[['院校', '专业']].applymap(lambda x: re.sub(r"\(.*?\)|\{.*?\}|\[.*?\]", "", x))
+    dt['位次'] = dt['位次'].fillna('0').astype(str).apply(lambda x: re.sub(r"前50名", "50", x) if x else '0').astype(int)
+    dt = dt[dt['位次'] != 0]
+    dt_school = dt[~dt['位次'].isin([np.inf, -np.inf])]
+    dt_school = dt_school.groupby('院校').agg(rank_by_school=('位次', 'median')).reset_index()
+    dt_school['rank_by_school'] = dt_school['rank_by_school'].astype(int)
+    # pd.merge(dt, dt_school, on='院校', how='left')
     return dt, dt_school
 
 # %%
 # Read data
-years = range(2020, 2024)
+years = range(2020, 2023)
 data_list = {f"dt{year}": read_and_process_data(year) for year in years}
-
 # Split data
 for year in years:
     globals()[f"dt{year}"], globals()[f"dt{year}_school"] = data_list[f"dt{year}"]
-
+ 
+ # %%
 # Function to process data
 def process_data(data):
     data['专业'] = data['专业'].str[2:]
@@ -74,7 +75,7 @@ dt2023_cmb = process_data(dt2023)
 dt2022_cmb = process_data(dt2022)
 dt2021_cmb = process_data(dt2021)
 dt2020_cmb = process_data(dt2020)
-
+# %%
 # Function to update major
 def update_major(df, majorData):
     df['major'] = np.nan
