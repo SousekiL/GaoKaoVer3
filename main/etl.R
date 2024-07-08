@@ -270,5 +270,3 @@ project211 <- c(
 )
 
 
-# read a data of xlsx
-

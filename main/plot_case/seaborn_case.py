@@ -196,3 +196,25 @@ g.ax.margins(.15)
 g.despine(trim=True)
 
 # %%
+import seaborn as sns
+penguins = sns.load_dataset("penguins")
+sns.jointplot(data=penguins, x="bill_length_mm", y="bill_depth_mm")
+
+#%%
+import seaborn as sns
+import matplotlib.pyplot as plt
+sns.set(style="whitegrid")
+
+penguins = sns.load_dataset("penguins")
+plt.figure(figsize=(12, 12))
+
+g = sns.displot(penguins, x="bill_length_mm", hue="species", col="island", col_wrap=2, height=3)
+sns.move_legend(g, loc="upper left", bbox_to_anchor=(.55, .45), title='Species')
+fig = g.get_figure()
+fig.savefig("/Users/sousekilyu/Downloads/111tmp.png",
+            dpi=300,
+            bbox_inches='tight')
+
+#%%
+
+
