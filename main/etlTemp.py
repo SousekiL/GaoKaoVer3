@@ -27,3 +27,4 @@ dt_school['rank_by_school'] = dt_school['rank_by_school'].astype(int)
 dt = pd.merge(dt, dt_school, on='院校', how='left')
 dt.head(35)
 # %%
+# import data

@@ -1,3 +1,5 @@
+# radian setting
+# https://luongbui.com/r-and-radian-on-macos-and-vscode/
 library(openxlsx)
 library(data.table)
 library(stringr)
