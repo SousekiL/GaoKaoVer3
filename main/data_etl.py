@@ -1,3 +1,9 @@
+# %% [markdown]
+# ## ETL for Gaokao Data
+
+# %% [markdown]
+# ### Import module
+
 # %%
 import pandas as pd
 import numpy as np
@@ -5,11 +11,18 @@ from openpyxl import load_workbook
 import os
 import re
 import matplotlib.pyplot as plt
+import seaborn as sns
 import warnings  
-warnings.warn('Warning Message') 
+# warnings.warn('Warning Message') 
+warnings.filterwarnings("ignore")
+
 # Set working directory
 os.chdir('/Users/sousekilyu/Documents/GitHub/GaoKaoVer3')
 
+# %% [markdown]
+# ### Define the major lists
+
+# %%
 # Define the major lists
 majorList = [
     ["新闻|传播", "新闻传播学"],
@@ -65,6 +78,10 @@ majorList2 = [
 majorData = pd.DataFrame(majorList, columns=["noun", "major"])
 majorData_rough = pd.DataFrame(majorList2, columns=["noun", "major"])
 
+# %% [markdown]
+# ### Read and process data
+
+# %%
 # Function to read and process data
 def read_and_process_data(year):
     """
@@ -79,16 +96,13 @@ def read_and_process_data(year):
     """
     # 从Excel文件中读取数据，指定列类型为字符串，并去除所有列的空值
     dt = pd.read_excel(f"data/{year}年山东省普通一批投档线.xlsx", dtype=str).dropna(axis=1, how='all')
-
     # 重命名列
     dt.columns = ["专业", "院校", "计划数", "位次"]
 
     # 移除包含“定向”或“预科”的专业行
     dt = dt[~dt['专业'].str.contains("定向|预科")]
-
     # 移除院校和专业列中的括号内的信息
-    dt[['院校', '专业']] = dt[['院校', '专业']].applymap(lambda x: re.sub(r"\(.*?\)|\{.*?\}|\[.*?\]", "", x))
-
+    dt[['院校', '专业']] = dt[['院校', '专业']].map(lambda x: re.sub(r"\(.*?\)|\{.*?\}|\[.*?\]", "", x))
     # 处理位次列，将“前50名”转换为数字50，并移除位次为0的行
     dt['位次'] = dt['位次'].fillna('0').astype(str).apply(lambda x: re.sub(r"前50名", "50", x) if x else '0').astype(int)
     dt = dt[dt['位次'] != 0]
@@ -96,26 +110,28 @@ def read_and_process_data(year):
     # 处理位次为正无穷或负无穷的行，并计算每个院校的位次中位数
     dt_school = dt[~dt['位次'].isin([np.inf, -np.inf])]
     dt_school = dt_school.groupby('院校').agg(rank_by_school=('位次', 'median')).reset_index()
-
     # 将院校的位次中位数转换为整数类型
     dt_school['rank_by_school'] = dt_school['rank_by_school'].astype(int)
+    
+    return dt, dt_school 
 
-    return dt, dt_school
-
-# %%
 # Read data
 years = range(2020, 2024)
 data_list = {f"dt{year}": read_and_process_data(year) for year in years}
 # Split data
 for year in years:
     globals()[f"dt{year}"], globals()[f"dt{year}_school"] = data_list[f"dt{year}"]
- 
+
+# head
+dt2023.head(10)
+
 # %%
 # Function to process data
 def process_data(data):
-    data['专业'] = data['专业'].str[2:]
-    data = data.groupby(['院校', '专业']).agg({'计划数': 'sum', '位次': 'max'}).reset_index()
-    return data
+    data_new = data.copy()
+    data_new['专业'] = data_new['专业'].str[2:]
+    data_new = data_new.groupby(['院校', '专业']).agg({'计划数': 'sum', '位次': 'max'}).reset_index()
+    return data_new
 
 # Process data
 dt2023_cmb_pd = process_data(dt2023)
@@ -123,18 +139,15 @@ dt2022_cmb_pd = process_data(dt2022)
 dt2021_cmb_pd = process_data(dt2021)
 dt2020_cmb_pd = process_data(dt2020)
 
-# %% doing
-dt2023_cmb_pd['major'] = np.nan
+# head
+dt2023_cmb_pd.head(10)
 
-for i in range(len(majorData)):
-    dt2023_cmb_pd.loc[df['专业'].str.contains(majorData.iloc[i, 0]), 'major'] = majorData.iloc[i, 1]
-
-dt2023_cmb_pd['major'].fillna(dt2023_cmb_pd['专业'], inplace=True)
-dt2023_cmb = dt2023_cmb_pd.groupby(['院校', 'major']).agg({'计划数': 'sum', '位次': 'max'}).reset_index()
+# %% [markdown]
+# ### Update major information
 
 # %%
 # Function to update major
-def update_major(df, majorData):
+def update_major(df, majordata):
     """
     更新 DataFrame 中的专业信息，根据 majorData 中的规则。
 
@@ -149,13 +162,12 @@ def update_major(df, majorData):
     df['major'] = np.nan
 
     # 遍历 majorData，根据专业匹配规则更新 df 中的专业名称
-    for i in range(len(majorData)):
+    for i in range(len(majordata)):
         # 当 '专业' 列包含 majorData 中的规则时，更新 'major' 列
-        df.loc[df['专业'].str.contains(majorData.iloc[i, 0]), 'major'] = majorData.iloc[i, 1]
+        df.loc[df['专业'].str.contains(majordata.iloc[i, 0]), 'major'] = majorData.iloc[i, 1]
 
     # 对 'major' 列中仍为空值的行，使用 '专业' 列的值进行填充
     df['major'].fillna(df['专业'], inplace=True)
-
     # 按 '院校' 和 'major' 分组，对 '计划数' 进行求和，对 '位次' 进行取最大值，然后重置索引
     df = df.groupby(['院校', 'major']).agg({'计划数': 'sum', '位次': 'max'}).reset_index()
 
@@ -166,6 +178,9 @@ dt2023_cmb = update_major(dt2023_cmb_pd, majorData)
 dt2022_cmb = update_major(dt2022_cmb_pd, majorData)
 dt2021_cmb = update_major(dt2021_cmb_pd, majorData)
 dt2020_cmb = update_major(dt2020_cmb_pd, majorData)
+
+# head
+dt2023_cmb.head(10)
 
 # %%
 # Function to perform operations
@@ -184,14 +199,20 @@ dt2020_rank_cmb = perform_operations(dt2020_cmb, dt2020_school, 2020)
 dt_rank_cmb = pd.concat([dt2023_rank_cmb, dt2022_rank_cmb, dt2021_rank_cmb, dt2020_rank_cmb])
 dt_rank_cmb['school'] = dt_rank_cmb['院校'].str[4:]
 
+# head
+dt_rank_cmb.head(10)
+
+# %% [markdown]
+# ### Calculate scaled scores
+
 # %%
 # Load school data
 school_data = pd.read_excel("/Users/sousekilyu/Documents/GitHub/GaoKaoVer2/data/全国普通高等学校名单.xlsx")[['school', 'city', 'province']]
 dt_rank_cmb = pd.merge(dt_rank_cmb, school_data, on='school', how='left')
 
 # Calculate scaled scores
-dt_rank_cmb['score_by_major_scale'] = dt_rank_cmb.groupby('year')['位次'].apply(lambda x: 100 - (x - x.min()) / (x.max() - x.min()) * 100)
-dt_rank_cmb['score_by_school_scale'] = dt_rank_cmb.groupby('year')['rank_by_school'].apply(lambda x: 100 - (x - x.min()) / (x.max() - x.min()) * 100)
+dt_rank_cmb['score_by_major_scale'] = dt_rank_cmb.groupby('year')['位次'].apply(lambda x: 100 - (x - x.min()) / (x.max() - x.min()) * 100).reset_index(drop=True)
+dt_rank_cmb['score_by_school_scale'] = dt_rank_cmb.groupby('year')['rank_by_school'].apply(lambda x: 100 - (x - x.min()) / (x.max() - x.min()) * 100).reset_index(drop=True)
 dt_rank_cmb.rename(columns={'计划数': 'frequency'}, inplace=True)
 
 # Calculate score changes
@@ -203,47 +224,27 @@ score_by_major_change = dt_rank_cmb[dt_rank_cmb['year'].isin([2020, 2023])].sort
 score_by_major_change['score_by_major_change'] = score_by_major_change['score_by_major_later'] - score_by_major_change['score_by_major_early']
 score_by_major_change = score_by_major_change[score_by_major_change['countn'] > 1].sort_values('score_by_major_change', ascending=False)
 
+# head
+score_by_major_change.head(10)
+
+# %%
+# Function to update major
+def update_major_rough(df, majordata):
+    # 初始化 'major' 列为空值
+    df['major_rough'] = np.nan
+    # 遍历 majorData，根据专业匹配规则更新 df 中的专业名称
+    for i in range(len(majordata)):
+        # 当 '专业' 列包含 majorData 中的规则时，更新 'major' 列
+        df.loc[df['major'].str.contains(majordata.iloc[i, 0]), 'major_rough'] = majordata.iloc[i, 1]
+    # 对 'major' 列中仍为空值的行，使用 '专业' 列的值进行填充
+    df['major_rough'].fillna(df['major'], inplace=True)
+
+    return df
+
 # Update major rough
-score_by_major_rough_change = update_major(score_by_major_change, majorData_rough)
-dt_rank_cmb_rough = update_major(dt_rank_cmb, majorData_rough)
+score_by_major_rough_change = update_major_rough(score_by_major_change, majorData_rough)
+dt_rank_cmb_rough = update_major_rough(dt_rank_cmb, majorData_rough)
 
-
+# head
+dt_rank_cmb_rough.head(10)
 # %%
-#' ## function plot
-# %%
-# Define a function to save the plot with a theme
-def save_plot_with_theme(p, filename, dpi):
-    p.set_title('Title', fontsize=75, fontname='Canger')
-    p.xaxis.label.set_size(50)
-    p.yaxis.label.set_size(50)
-    p.xaxis.set_tick_params(labelsize=50, rotation=45)
-    p.yaxis.set_tick_params(labelsize=50)
-    p.legend(prop={'size': 50, 'family': 'Canger'})
-    p.figure.savefig(filename, dpi=dpi)
-
-# Create a dataframe
-df = pd.DataFrame({
-    'score': [1, 2, 3, 4, 5],
-    'frequency': [10, 20, 30, 25, 15]
-})
-
-# Calculate cumulative frequency
-df['cum_frequency'] = df['frequency'].cumsum()
-
-# Calculate total frequency
-total_frequency = df['frequency'].sum()
-
-# Define levels
-levels = pd.cut(df['cum_frequency'], 
-                bins=[0, total_frequency * 0.2, total_frequency * 0.4, total_frequency * 0.6, total_frequency * 0.8, total_frequency], 
-                labels=["Very Low", "Low", "Medium", "High", "Very High"])
-
-df['level'] = levels
-
-# Plot
-p = df.plot(kind='bar', x='score', y='frequency', legend=False)
-p.set_xlabel('Score')
-p.set_ylabel('Frequency')
-
-# Save the plot with a theme
-save_plot_with_theme(p, 'plot.png', 300)
