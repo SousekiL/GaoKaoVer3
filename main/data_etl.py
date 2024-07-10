@@ -19,6 +19,9 @@ warnings.filterwarnings("ignore")
 # Set working directory
 os.chdir('/Users/sousekilyu/Documents/GitHub/GaoKaoVer3')
 
+# For Python 3
+# pip3 install --upgrade --force-reinstall --no-cache-dir jupyter
+
 # %% [markdown]
 # ### Define the major lists
 
@@ -247,4 +250,5 @@ dt_rank_cmb_rough = update_major_rough(dt_rank_cmb, majorData_rough)
 
 # head
 dt_rank_cmb_rough.head(10)
-# %%
+
+
