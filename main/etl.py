@@ -5,7 +5,8 @@ from openpyxl import load_workbook
 import os
 import re
 import matplotlib.pyplot as plt
-
+import warnings  
+warnings.warn('Warning Message') 
 # Set working directory
 os.chdir('/Users/sousekilyu/Documents/GitHub/GaoKaoVer3')
 
