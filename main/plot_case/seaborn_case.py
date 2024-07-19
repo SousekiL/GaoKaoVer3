@@ -2,7 +2,7 @@
 ## https://seaborn.pydata.org/examples/index.html
 # %%
 import seaborn as sns
-sns.set_theme(style="ticks")
+import matplotlib.pyplot as plt
 
 dots = sns.load_dataset("dots")
 
@@ -19,13 +19,13 @@ g = sns.relplot(
 )
 
 # save as png file
-g.savefig("/Users/sousekilyu/Downloads/seaborn_case1.png", 
+g.savefig("/Users/sousekilyu/Downloads/seaborn_case1.png",
           dpi=300)
+plt.show()
 
 # %%
 import numpy as np
 import seaborn as sns
-import matplotlib.pyplot as plt
 sns.set_theme(style="dark")
 
 # Simulate data from a bivariate Gaussian
@@ -43,6 +43,8 @@ sns.kdeplot(x=x, y=y, levels=5, color="w", linewidths=1)
 
 # Save the figure as a PNG file
 plt.savefig("/Users/sousekilyu/Downloads/seaborn_case2.png", dpi=300)
+plt.show()
+
 # %%
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -69,7 +71,8 @@ sns.stripplot(planets, x="distance", y="method", size=4, color=".3")
 ax.xaxis.grid(True)
 ax.set(ylabel="")
 sns.despine(trim=True, left=True)
-plt.savefig("/Users/sousekilyu/Downloads/seaborn_case3.png", dpi=300)
+plt.savefig("/Users/sousekilyu/Downloads/seaborn_case15.png", dpi=300)
+plt.show()
 
 # %%
 #' ## Annotated heatmaps
@@ -89,6 +92,7 @@ flights = (
 f, ax = plt.subplots(figsize=(9, 6))
 sns.heatmap(flights, annot=True, fmt="d", linewidths=.5, ax=ax)
 plt.savefig("/Users/sousekilyu/Downloads/seaborn_case4.png", dpi=300)
+plt.show()
 
 # %%
 #' ## Scatterplot with continuous hues and sizes
@@ -112,7 +116,9 @@ g.set(xscale="log", yscale="log")
 g.ax.xaxis.grid(True, "minor", linewidth=.25)
 g.ax.yaxis.grid(True, "minor", linewidth=.25)
 g.despine(left=True, bottom=True)
+print(g)
 plt.savefig("/Users/sousekilyu/Downloads/seaborn_case5.png", dpi=300)
+plt.show()
 
 # %%
 #' ## An introduction to seaborn
@@ -194,6 +200,7 @@ g.legend.set_title("Body mass (g)")
 g.figure.set_size_inches(6.5, 4.5)
 g.ax.margins(.15)
 g.despine(trim=True)
+plt.show()
 
 # %%
 import seaborn as sns
@@ -203,17 +210,18 @@ sns.jointplot(data=penguins, x="bill_length_mm", y="bill_depth_mm")
 #%%
 import seaborn as sns
 import matplotlib.pyplot as plt
-sns.set(style="whitegrid")
-
 penguins = sns.load_dataset("penguins")
+
+sns.set(style="ticks", context="talk")
+plt.style.use("dark_background")
 plt.figure(figsize=(12, 12))
 
 g = sns.displot(penguins, x="bill_length_mm", hue="species", col="island", col_wrap=2, height=3)
-sns.move_legend(g, loc="upper left", bbox_to_anchor=(.55, .45), title='Species')
-fig = g.get_figure()
-fig.savefig("/Users/sousekilyu/Downloads/111tmp.png",
+sns.move_legend(g, loc="upper left", bbox_to_anchor=(.55, .35), title='Species')
+plt.savefig("/Users/sousekilyu/Downloads/plt211.png",
             dpi=300,
             bbox_inches='tight')
+plt.show()
 
 #%%
 

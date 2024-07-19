@@ -12,7 +12,10 @@ import os
 import re
 import matplotlib.pyplot as plt
 import seaborn as sns
-import warnings  
+import warnings
+pd.set_option('display.max_rows', 500)
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
 # warnings.warn('Warning Message') 
 warnings.filterwarnings("ignore")
 
@@ -107,7 +110,8 @@ def read_and_process_data(year):
     # 移除院校和专业列中的括号内的信息
     dt[['院校', '专业']] = dt[['院校', '专业']].map(lambda x: re.sub(r"\(.*?\)|\{.*?\}|\[.*?\]", "", x))
     # 处理位次列，将“前50名”转换为数字50，并移除位次为0的行
-    dt['位次'] = dt['位次'].fillna('0').astype(str).apply(lambda x: re.sub(r"前50名", "50", x) if x else '0').astype(int)
+    # dt['位次'] = dt['位次'].fillna('0').astype(str).apply(lambda x: re.sub(r"前50名", "50", x) if x else '0').astype(int)
+    dt['位次'] = dt['位次'].fillna('0').astype(int)
     dt = dt[dt['位次'] != 0]
 
     # 处理位次为正无穷或负无穷的行，并计算每个院校的位次中位数
@@ -118,15 +122,16 @@ def read_and_process_data(year):
     
     return dt, dt_school 
 
+# %%
 # Read data
-years = range(2020, 2024)
+years = range(2020, 2025)
 data_list = {f"dt{year}": read_and_process_data(year) for year in years}
 # Split data
 for year in years:
     globals()[f"dt{year}"], globals()[f"dt{year}_school"] = data_list[f"dt{year}"]
 
 # head
-dt2023.head(10)
+dt2024.head(10)
 
 # %%
 # Function to process data
@@ -137,6 +142,7 @@ def process_data(data):
     return data_new
 
 # Process data
+dt2024_cmb_pd = process_data(dt2024)
 dt2023_cmb_pd = process_data(dt2023)
 dt2022_cmb_pd = process_data(dt2022)
 dt2021_cmb_pd = process_data(dt2021)
@@ -193,13 +199,14 @@ def perform_operations(data, dt_school, year):
     return data
 
 # Perform operations
+dt2024_rank_cmb = perform_operations(dt2023_cmb, dt2024_school, 2024)
 dt2023_rank_cmb = perform_operations(dt2023_cmb, dt2023_school, 2023)
 dt2022_rank_cmb = perform_operations(dt2022_cmb, dt2022_school, 2022)
 dt2021_rank_cmb = perform_operations(dt2021_cmb, dt2021_school, 2021)
 dt2020_rank_cmb = perform_operations(dt2020_cmb, dt2020_school, 2020)
 
 # Bind rows
-dt_rank_cmb = pd.concat([dt2023_rank_cmb, dt2022_rank_cmb, dt2021_rank_cmb, dt2020_rank_cmb])
+dt_rank_cmb = pd.concat([dt2024_rank_cmb, dt2023_rank_cmb, dt2022_rank_cmb, dt2021_rank_cmb, dt2020_rank_cmb])
 dt_rank_cmb['school'] = dt_rank_cmb['院校'].str[4:]
 
 # head
@@ -210,7 +217,7 @@ dt_rank_cmb.head(10)
 
 # %%
 # Load school data
-school_data = pd.read_excel("/Users/sousekilyu/Documents/GitHub/GaoKaoVer2/data/全国普通高等学校名单.xlsx")[['school', 'city', 'province']]
+school_data = pd.read_excel("data/全国普通高等学校名单.xlsx")[['school', 'city', 'province']]
 dt_rank_cmb = pd.merge(dt_rank_cmb, school_data, on='school', how='left')
 
 # Calculate scaled scores
@@ -219,7 +226,7 @@ dt_rank_cmb['score_by_school_scale'] = dt_rank_cmb.groupby('year')['rank_by_scho
 dt_rank_cmb.rename(columns={'计划数': 'frequency'}, inplace=True)
 
 # Calculate score changes
-score_by_major_change = dt_rank_cmb[dt_rank_cmb['year'].isin([2020, 2023])].sort_values('year').groupby(['院校', 'major', 'province', 'city']).agg(
+score_by_major_change = dt_rank_cmb[dt_rank_cmb['year'].isin([2020, 2024])].sort_values('year').groupby(['院校', 'major', 'province', 'city']).agg(
     countn=('year', 'count'),
     score_by_major_early=('score_by_major_scale', 'first'),
     score_by_major_later=('score_by_major_scale', 'last')
