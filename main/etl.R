@@ -1,4 +1,29 @@
-"~/Documents/GitHub/GaoKaoVer2/main/etl.R"
+library(openxlsx)
+library(data.table)
+library(stringr)
+library(magrittr)
+library(dplyr)
+library(ggplot2)
+library(glue)
+library(wordcloud)
+library(RColorBrewer)
+library(wordcloud2)
+library(dplyr)
+library(readxl)
+library(stringr)
+library(showtext)
+library(ggstance)
+library(ggbreak)
+library(plotly)
+library(ggpubr)
+library(tidyverse)
+library(ggcharts)
+library(ggrepel)
+font_add("Canger", "/Library/Fonts/仓耳今楷01-W04.ttf")
+font_families()
+showtext_auto()  # 全局自动使用
+showtext_opts(dpi = 600)
+#showtext_auto(FALSE) # 不需要就关闭
 
 setwd('/Users/sousekilyu/Documents/GitHub/GaoKaoVer3')
 
